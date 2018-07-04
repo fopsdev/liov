@@ -1,6 +1,6 @@
 import { html } from "lit-html/lib/lit-extended.js"
 import { repeat } from "lit-html/lib/repeat.js"
-import { Data, Lif, tree } from "../library/index.js"
+import { Data, Lif, Tracker } from "../library/index.js"
 import { B } from "./B.js"
 
 export const A = (props, parent) => html`
@@ -17,20 +17,20 @@ export const A = (props, parent) => html`
     </ul>
 
 <button on-click=${() => {
-    tree.startMutationTracking()
+    Tracker.startMutationTracking()
     if (Data.C === "X") {
         Data.B.pop()
     } else {
         Data.C = "X"
         Data.B.push({ id: new Date().valueOf() })
     }
-    tree.clearMutationTracking()
-    tree.flush()
+    Tracker.clearMutationTracking()
+    Tracker.flush()
 }}>click me</button>
 <button on-click=${() => {
-    tree.startMutationTracking()
+    Tracker.startMutationTracking()
     Data.C = "C"
-    tree.clearMutationTracking()
-    tree.flush()
+    Tracker.clearMutationTracking()
+    Tracker.flush()
 }}>Set to C</button>
 `

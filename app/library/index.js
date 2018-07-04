@@ -3,12 +3,13 @@ import ProxyStateTree from "proxy-state-tree"
 import { noChange } from "lit-html"
 import { render } from "lit-html"
 
-export const tree = new ProxyStateTree(Store)
-export let Data = tree.get()
+export const Tracker = new ProxyStateTree(Store)
+export let Data = Tracker.get()
 
 let CompState = new Map()
 
 export let Settings = { Rerender: true }
+// @todo make parent a object and call it _settings. it will be used to handover the compstate & settings & current parentinfo
 export function Lif(comp, props, parent = undefined) {
     let compId = generateKey(comp, props)
     if (!CompState.has(compId)) {
@@ -25,21 +26,24 @@ export function Lif(comp, props, parent = undefined) {
     state.touched = true
     state.compId = compId
     if (state.needsRender) {
-        let trackId = tree.startPathsTracking()
+        let trackId = Tracker.startPathsTracking()
         console.log("run comp: " + compId)
         let res = comp(props, compId)
-        const paths = tree.clearPathsTracking(trackId)
+        const paths = Tracker.clearPathsTracking(trackId)
         if (paths.size > 0) {
             if (state.mutationListener === undefined) {
-                state.mutationListener = tree.addMutationListener(paths, () => {
-                    Settings.Rerender = true
-                    // flag all relevant comps to be rerendered
-                    let checkState = state
-                    while (checkState && !checkState.needsRender) {
-                        checkState.needsRender = true
-                        checkState = CompState.get(checkState.parent)
+                state.mutationListener = Tracker.addMutationListener(
+                    paths,
+                    () => {
+                        Settings.Rerender = true
+                        // flag all relevant comps to be rerendered
+                        let checkState = state
+                        while (checkState && !checkState.needsRender) {
+                            checkState.needsRender = true
+                            checkState = CompState.get(checkState.parent)
+                        }
                     }
-                })
+                )
             } else {
                 state.mutationListener.update(paths)
             }
@@ -72,6 +76,8 @@ function generateKey(comp, props) {
 
 export function StartRender(comp, initialprops, domelement) {
     function mainLoop() {
+        let compId = generateKey(comp, initialprops)
+        //@ todo makes settings, compstate per app root
         if (Settings.Rerender) {
             Settings.Rerender = false
             CompState.forEach(c => (c.touched = false))
