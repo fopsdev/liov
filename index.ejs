@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="theme-color" content="#000000">
+  <title>
+    <%= htmlWebpackPlugin.options.title %>
+  </title>
+  <style type="text/css">
+    html * {
+      font-family: 'Verdana' !important;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+  <!--
+      manifest.json provides metadata used when your web app is added to the
+      homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
+    -->
+  <link rel="stylesheet" href="./blaze.min.css">
+  <link rel="stylesheet" href="./animate.min.css">
+  <link rel="manifest" href="./manifest.json">
+
+
+  <link rel="shortcut icon" href="./favicon.ico">
+  <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+  <title>Inferno App</title>
+</head>
+
+<body>
+  <div id="loader" style="position: fixed" class=" animated fadeIn u-centered">
+
+    <h3 class="animated jello infinite" style="color: #B4201F">Loading...</h3>
+    <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="100vw" height="50vh" viewBox="0 0 686 841">
+      <g transform="translate(0.000000,841.000000) scale(0.100000,-0.100000)" fill="#B4201F" stroke="none">
+        <path d="M3200 8399 c-1182 -121 -2220 -875 -2698 -1959 -206 -467 -292 -913
+       -279 -1443 13 -521 129 -972 369 -1437 87 -169 94 -179 112 -160 7 8 202 242
+       433 520 345 416 517 612 837 957 9 10 31 -5 99 -68 48 -44 87 -85 87 -89 0
+       -28 -506 -548 -974 -1002 l-540 -523 -324 -388 c-178 -214 -321 -391 -318
+       -394 3 -3 186 171 408 386 397 386 403 392 418 369 107 -162 380 -458 570
+       -617 113 -95 318 -247 323 -240 2 2 248 299 548 659 553 664 938 1097 963
+       1083 7 -5 49 -42 93 -83 l81 -75 -233 -250 c-132 -141 -484 -493 -809 -808
+       -317 -307 -576 -563 -576 -569 0 -6 -120 -155 -267 -332 -148 -177 -275 -330
+       -283 -340 -46 -58 41 21 325 296 174 170 322 308 327 308 6 0 47 -20 92 -44
+       262 -142 636 -273 945 -331 464 -86 989 -68 1442 49 1340 346 2322 1480 2474
+       2856 17 157 20 529 5 681 -56 558 -234 1058 -544 1524 -52 77 -114 166 -140
+       197 -25 31 -46 61 -46 67 0 5 72 185 159 398 88 213 158 389 156 391 -2 2 -39
+       -8 -82 -22 -68 -23 -80 -30 -90 -57 -11 -27 -10 -30 5 -24 11 4 8 -3 -9 -22
+       -18 -19 -210 -474 -603 -1433 -318 -773 -580 -1408 -584 -1412 -4 -4 -167 112
+       -362 257 -195 145 -359 264 -365 265 -5 0 -118 -135 -249 -300 -132 -165 -240
+       -299 -242 -297 -1 1 16 191 37 422 21 231 38 433 39 448 0 18 5 27 13 25 12
+       -3 2225 1987 2266 2036 7 9 11 16 8 16 -3 0 -178 -110 -389 -243 -211 -134
+       -817 -519 -1347 -856 l-963 -612 -48 33 c-361 254 -669 474 -670 479 0 3 622
+       232 1383 508 760 277 1386 507 1390 511 9 8 -82 78 -228 173 -424 277 -927
+       455 -1445 512 -148 16 -556 18 -700 4z m122 -3224 l85 -80 -246 -263 c-154
+       -165 -542 -551 -1034 -1028 -434 -420 -790 -764 -793 -764 -4 0 132 164 1035
+       1250 369 443 842 975 861 968 4 -2 46 -39 92 -83z" />
+      </g>
+    </svg>
+
+  </div>
+  <div class="wrapper">
+    <div class="box a" style="top:200px" id="content"></div>
+    <div class="box b" id="nav"></div>
+  </div>
+  <noscript>
+    You need to enable JavaScript to run this app.
+  </noscript>
+  <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+</body>
+
+</html>
