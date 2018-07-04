@@ -16,7 +16,7 @@ export const A = (props, parent) => html`
       )}
     </ul>
 
-<button on-click=${e => {
+<button on-click=${() => {
     tree.startMutationTracking()
     if (Data.C === "X") {
         Data.B.pop()
@@ -27,7 +27,7 @@ export const A = (props, parent) => html`
     tree.clearMutationTracking()
     tree.flush()
 }}>click me</button>
-<button on-click=${e => {
+<button on-click=${() => {
     tree.startMutationTracking()
     Data.C = "C"
     tree.clearMutationTracking()

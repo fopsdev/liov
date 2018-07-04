@@ -70,13 +70,13 @@ function generateKey(comp, props) {
     })
 }
 
-export function StartRender(comp, domelement) {
+export function StartRender(comp, initialprops, domelement) {
     function mainLoop() {
         if (Settings.Rerender) {
             Settings.Rerender = false
             CompState.forEach(c => (c.touched = false))
             console.log("Start Render...")
-            let res = Lif(comp, {})
+            let res = Lif(comp, initialprops, "root")
             if (res !== noChange) {
                 render(res, domelement)
             }
