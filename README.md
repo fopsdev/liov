@@ -1,4 +1,4 @@
-# CeLiCa
+# liov
 
 > Small Helper lib that uses cerebral state store (https://cerebraljs.com/), lit-html templating (https://github.com/Polymer/lit-html) and some caching functionality. Its using a functional approach.
 
@@ -7,7 +7,8 @@
 
 Light and fast clientside html rendering using a central store.
 Avoiding huge rendertrees by supporting renderparts without splitting up the store.
-Use caching for computed values and even for html components
+Recognises untouched nodes and leaves them alone (noChange, or for inferno $NO_OP) 
+Can be used for computed values and even for html components
 The plan is to use it for my future personal projects. let me know if you find it useful.
 
 ## Requirements
