@@ -22,7 +22,7 @@ export const A = (props, parent) => html`
         Data.B.pop()
     } else {
         Data.C = "X"
-        Data.B.push({ id: "B4" })
+        Data.B.push({ id: new Date().valueOf() })
     }
     tree.clearMutationTracking()
     tree.flush()

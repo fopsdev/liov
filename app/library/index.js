@@ -7,7 +7,6 @@ export const tree = new ProxyStateTree(Store)
 export let Data = tree.get()
 
 let CompState = new Map()
-export let ChangedPaths = new Set()
 
 export let Settings = { Rerender: true }
 export function Lif(comp, props, parent = undefined) {
@@ -16,7 +15,6 @@ export function Lif(comp, props, parent = undefined) {
         CompState.set(compId, {
             needsRender: true,
             touched: true,
-            paths: new Set(),
             mutationListener: undefined,
             parent: undefined,
             compId: undefined
@@ -31,9 +29,6 @@ export function Lif(comp, props, parent = undefined) {
         console.log("run comp: " + compId)
         let res = comp(props, compId)
         const paths = tree.clearPathsTracking(trackId)
-        paths.forEach(e => {
-            state.paths.add(e)
-        })
         if (paths.size > 0) {
             if (state.mutationListener === undefined) {
                 state.mutationListener = tree.addMutationListener(paths, () => {
@@ -53,7 +48,6 @@ export function Lif(comp, props, parent = undefined) {
         return res
     } else {
         console.log("saved some cycles: " + compId)
-
         //set all childs to touched = true
         setTouched(compId)
         return noChange
@@ -76,7 +70,7 @@ function generateKey(comp, props) {
     })
 }
 
-export function StartRender(comp) {
+export function StartRender(comp, domelement) {
     function mainLoop() {
         if (Settings.Rerender) {
             Settings.Rerender = false
@@ -84,21 +78,23 @@ export function StartRender(comp) {
             console.log("Start Render...")
             let res = Lif(comp, {})
             if (res !== noChange) {
-                render(res, document.body)
+                render(res, domelement)
             }
             // cleanup not touched comps
             let toDelete = []
-            for (var [key, value] of CompState.entries()) {
+            for (var value of CompState.values()) {
                 if (!value.touched) {
                     if (value.mutationListener) {
                         value.mutationListener.dispose()
                     }
-                    toDelete.push(key)
+                    toDelete.push(value.compId)
                 }
             }
             toDelete.forEach(e => CompState.delete(e))
             console.log("Finished Render. Comp State :")
             console.log(CompState)
+            console.log("store: ")
+            console.log(Store)
         }
         requestAnimationFrame(mainLoop)
     }
