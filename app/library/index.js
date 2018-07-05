@@ -8,10 +8,76 @@ export let Data = Tracker.get()
 
 //let CompState = new Map()
 
-let SettingsAndState = new Map()
+export let SettingsAndState = new Map()
 
 //export let Settings = { Rerender: true }
 // @todo make parent a object and call it _settings. it will be used to handover the compstate & settings & current parentinfo
+export function Compute(comp, props, propsDependency = false) {
+    if (!props) {
+        props = {}
+    } else {
+        if (!propsDependency) {
+            let newProps = Object.assign(
+                {},
+                {
+                    _parent: props._parent,
+                    _appId: props._appId,
+                    _isComputed: props._isComputed
+                }
+            )
+            props = newProps
+        }
+    }
+    // if we are coming from render context (UI) then just keep using that infrastructure
+    let compId = generateKey(comp, props)
+    let computedCompId = "computed_" + compId
+    if (!SettingsAndState.has(computedCompId)) {
+        SettingsAndState.set(computedCompId, {
+            CompState: new Map()
+        })
+    }
+    let computedState = SettingsAndState.get(computedCompId).CompState
+    console.log(computedState)
+    props["_isComputed"] = true
+    if (props._parent) {
+        let res = Lif(comp, props)
+        // getting the computed state from the rendertree comp state, no need to recreate it, just use the same
+
+        let renderCompState = SettingsAndState.get(props._appId).CompState
+        //console.log(renderCompState)
+        let renderComputedState = renderCompState.get(compId)
+        // if (!computedState.has(compId)) {
+        //     computedState.set(compId, {})
+        // }
+        renderComputedState.inUI = renderComputedState.compId
+        computedState.set(compId, renderComputedState)
+
+        console.log("Finished Compute " + computedCompId + ", Comp State :")
+        console.log(computedState)
+        return res
+    }
+
+    props["_parent"] = "computedroot"
+    props["_appId"] = computedCompId
+    computedState.forEach(c => (c.touched = false))
+    console.log("Start Compute in Compute Mode : " + computedCompId)
+    let res = Lif(comp, props)
+    let toDelete = []
+    for (var value of computedState.values()) {
+        if (!value.touched && value.inUI === undefined) {
+            if (value.mutationListener) {
+                value.mutationListener.dispose()
+            }
+            toDelete.push(value.compId)
+        }
+    }
+    toDelete.forEach(e => computedState.delete(e))
+    console.log("Finished Compute " + computedCompId + ", Comp State :")
+    console.log(computedState)
+    console.log("store: ")
+    console.log(Store)
+    return res
+}
 export function Lif(comp, props) {
     if (!props._parent || !props._appId) {
         throw "liov: components always need to pass _parent and _appId object..."
@@ -24,13 +90,20 @@ export function Lif(comp, props) {
     //console.log(props)
     let _settings = SettingsAndState.get(props._appId)
     let compState = _settings.CompState
-    if (!compState.has(compId)) {
+    let isComputed = false
+    if (props._isComputed) {
+        isComputed = true
+    }
+    props["_isComputed"] = false
+    if (!compState.has(compId) || !compState.get(compId)) {
         compState.set(compId, {
             needsRender: true,
             touched: true,
+            inUI: undefined,
             mutationListener: undefined,
             parent: undefined,
-            compId: undefined
+            compId: undefined,
+            isComputed: isComputed
         })
     }
     let state = compState.get(compId)
@@ -48,9 +121,11 @@ export function Lif(comp, props) {
                 state.mutationListener = Tracker.addMutationListener(
                     paths,
                     () => {
-                        _settings.Settings.Rerender = true
                         // flag all relevant comps to be rerendered
                         let checkState = state
+                        if (!state.isComputed) {
+                            _settings.Settings.Rerender = true
+                        }
                         while (checkState && !checkState.needsRender) {
                             checkState.needsRender = true
                             checkState = compState.get(checkState.parent)
@@ -62,12 +137,19 @@ export function Lif(comp, props) {
             }
         }
         state.needsRender = false
+        if (state.isComputed) {
+            state.cache = res
+        }
         return res
     } else {
         console.log("saved some cycles: " + compId)
         //set all childs to touched = true
         setTouched(_settings.CompState, compId)
-        return noChange
+        if (state.isComputed) {
+            return state.cache
+        } else {
+            return noChange
+        }
     }
 }
 function setTouched(compState, compId) {
@@ -84,7 +166,7 @@ function generateKey(comp, props) {
     props.toJSON = function() {
         var result = {}
         for (var x in this) {
-            if (x !== "_parent" && x !== "_appId") {
+            if (x !== "_parent" && x !== "_appId" && x !== "_isComputed") {
                 result[x] = this[x]
             }
         }
@@ -120,11 +202,11 @@ export function StartRender(comp, initialprops, domelement) {
             // cleanup not touched comps
             let toDelete = []
             for (var value of _settings.CompState.values()) {
-                if (!value.touched) {
+                if (!value.touched && !value.isComputed) {
                     if (value.mutationListener) {
                         value.mutationListener.dispose()
                     }
-                    //console.log("disposing :" + value.compId)
+                    console.log("disposing :" + value.compId)
                     toDelete.push(value.compId)
                 }
             }

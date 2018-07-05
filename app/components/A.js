@@ -1,7 +1,14 @@
 import { html } from "lit-html/lib/lit-extended.js"
 import { repeat } from "lit-html/lib/repeat.js"
-import { Data, Lif, Tracker } from "../library/index.js"
+import {
+    Data,
+    Lif,
+    Compute,
+    Tracker,
+    SettingsAndState
+} from "../library/index.js"
 import { B } from "./B.js"
+import { Computed1 } from "../computeds/Computed1.js"
 
 export const A = props => html`
 
@@ -34,4 +41,8 @@ export const A = props => html`
     Tracker.clearMutationTracking()
     Tracker.flush()
 }}>Set to C</button>
+<button class="c-button" on-click=${() => {
+    console.log(Compute(Computed1))
+    console.log(SettingsAndState)
+}}>Console log Computed1</button>
 `
