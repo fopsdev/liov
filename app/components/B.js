@@ -13,5 +13,5 @@ const GetExtendedList = props => {
 }
 export const B = props => html`
 <li>-- ${GetExtendedList(props)}</li>
-<b> ${Compute(Computed1, props, true)} </b>
+<b> ${Compute(Computed1, props, false, 60 * 1000 * 10)} </b>
 `

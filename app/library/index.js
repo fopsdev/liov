@@ -41,19 +41,15 @@ export function Compute(
             CompState: new Map()
         })
     }
-    console.log(computedCompId)
+    //console.log(computedCompId)
     let computedState = SettingsAndState.get(computedCompId).CompState
-    console.log(computedState)
-    // if (!computedState.computedSettings.isComputed) {
+
     props["_computedSettings"] = {
         isComputed: true,
         lastAccess: new Date().valueOf(),
         validFor: validFor
     }
-    // } else {
-    //     computedState.computedSettings.lastAccess = new Date().valueOf()
-    //     props["_computedSettings"] = computedState.computedSettings
-    // }
+
     if (props._parent) {
         let res = Lif(comp, props)
         // getting the computed state from the rendertree comp state, no need to recreate it, just use the same
@@ -67,15 +63,15 @@ export function Compute(
         renderComputedState.inUI = renderComputedState.compId
         computedState.set(compId, renderComputedState)
 
-        console.log("Finished Compute " + computedCompId + ", Comp State :")
-        console.log(computedState)
+        //console.log("Finished Compute " + computedCompId + ", Comp State :")
+        //console.log(computedState)
         return res
     }
 
     props["_parent"] = "computedroot"
     props["_appId"] = computedCompId
     computedState.forEach(c => (c.touched = false))
-    console.log("Start Compute in Compute Mode : " + computedCompId)
+    //console.log("Start Compute in Compute Mode : " + computedCompId)
     let res = Lif(comp, props)
     let toDelete = []
     for (var value of computedState.values()) {
@@ -87,10 +83,10 @@ export function Compute(
         }
     }
     toDelete.forEach(e => computedState.delete(e))
-    console.log("Finished Compute " + computedCompId + ", Comp State :")
-    console.log(computedState)
-    console.log("store: ")
-    console.log(Store)
+    // console.log("Finished Compute " + computedCompId + ", Comp State :")
+    // console.log(computedState)
+    // console.log("store: ")
+    // console.log(Store)
     return res
 }
 export function Lif(comp, props) {
@@ -174,7 +170,7 @@ function setTouched(compState, compId) {
     Array.from(compState.values())
         .filter(e => e.parent === compId)
         .forEach(e => {
-            console.log("touch: " + JSON.stringify(e))
+            //console.log("touch: " + JSON.stringify(e))
             e.touched = true
 
             if (e.computedSettings) {
@@ -219,7 +215,7 @@ export function StartRender(comp, initialprops, domelement) {
         if (_settings.Settings.Rerender) {
             _settings.Settings.Rerender = false
             _settings.CompState.forEach(c => (c.touched = false))
-            console.log("Start Render : " + compId)
+            //console.log("Start Render : " + compId)
 
             let res = Lif(comp, initialprops)
             if (res !== noChange) {
@@ -228,20 +224,21 @@ export function StartRender(comp, initialprops, domelement) {
             // cleanup not touched comps
             let toDelete = []
             for (var value of _settings.CompState.values()) {
-                console.log(value)
+                //console.log(value)
                 if (!value.touched && !value.computedSettings.isComputed) {
                     if (value.mutationListener) {
                         value.mutationListener.dispose()
                     }
-                    console.log("disposing :" + value.compId)
+                    //console.log("disposing :" + value.compId)
                     toDelete.push(value.compId)
                 }
             }
             toDelete.forEach(e => _settings.CompState.delete(e))
-            console.log("Finished Render " + compId + ", Comp State :")
-            console.log(_settings.CompState)
-            console.log("store: ")
-            console.log(Store)
+            console.log("Finished Render " + compId + ", All Comp State :")
+            // console.log(_settings.CompState)
+            // console.log("store: ")
+            // console.log(Store)
+            console.log(SettingsAndState)
         }
         requestAnimationFrame(mainLoop)
     }
