@@ -12,7 +12,12 @@ export let SettingsAndState = new Map()
 
 //export let Settings = { Rerender: true }
 // @todo make parent a object and call it _settings. it will be used to handover the compstate & settings & current parentinfo
-export function Compute(comp, props, propsDependency = false) {
+export function Compute(
+    comp,
+    props,
+    propsDependency = false,
+    validFor = 1000 * 60 * 3
+) {
     if (!props) {
         props = {}
     } else {
@@ -22,7 +27,7 @@ export function Compute(comp, props, propsDependency = false) {
                 {
                     _parent: props._parent,
                     _appId: props._appId,
-                    _isComputed: props._isComputed
+                    _computedSettings: props._computedSettings
                 }
             )
             props = newProps
@@ -36,9 +41,19 @@ export function Compute(comp, props, propsDependency = false) {
             CompState: new Map()
         })
     }
+    console.log(computedCompId)
     let computedState = SettingsAndState.get(computedCompId).CompState
     console.log(computedState)
-    props["_isComputed"] = true
+    // if (!computedState.computedSettings.isComputed) {
+    props["_computedSettings"] = {
+        isComputed: true,
+        lastAccess: new Date().valueOf(),
+        validFor: validFor
+    }
+    // } else {
+    //     computedState.computedSettings.lastAccess = new Date().valueOf()
+    //     props["_computedSettings"] = computedState.computedSettings
+    // }
     if (props._parent) {
         let res = Lif(comp, props)
         // getting the computed state from the rendertree comp state, no need to recreate it, just use the same
@@ -90,11 +105,11 @@ export function Lif(comp, props) {
     //console.log(props)
     let _settings = SettingsAndState.get(props._appId)
     let compState = _settings.CompState
-    let isComputed = false
-    if (props._isComputed) {
-        isComputed = true
+    let computedSettings = props._computedSettings
+    if (!computedSettings) {
+        computedSettings = {}
     }
-    props["_isComputed"] = false
+    props["_computedSettings"] = {}
     if (!compState.has(compId) || !compState.get(compId)) {
         compState.set(compId, {
             needsRender: true,
@@ -103,7 +118,7 @@ export function Lif(comp, props) {
             mutationListener: undefined,
             parent: undefined,
             compId: undefined,
-            isComputed: isComputed
+            computedSettings: computedSettings
         })
     }
     let state = compState.get(compId)
@@ -123,7 +138,7 @@ export function Lif(comp, props) {
                     () => {
                         // flag all relevant comps to be rerendered
                         let checkState = state
-                        if (!state.isComputed) {
+                        if (!state.computedSettings.isComputed) {
                             _settings.Settings.Rerender = true
                         }
                         while (checkState && !checkState.needsRender) {
@@ -137,15 +152,18 @@ export function Lif(comp, props) {
             }
         }
         state.needsRender = false
-        if (state.isComputed) {
+        if (state.computedSettings.isComputed) {
             state.cache = res
         }
         return res
     } else {
         console.log("saved some cycles: " + compId)
         //set all childs to touched = true
+        if (state.computedSettings) {
+            state.computedSettings.lastAccess = new Date().valueOf()
+        }
         setTouched(_settings.CompState, compId)
-        if (state.isComputed) {
+        if (state.computedSettings.isComputed) {
             return state.cache
         } else {
             return noChange
@@ -156,8 +174,12 @@ function setTouched(compState, compId) {
     Array.from(compState.values())
         .filter(e => e.parent === compId)
         .forEach(e => {
-            //console.log("touch: " + e.compId)
+            console.log("touch: " + JSON.stringify(e))
             e.touched = true
+
+            if (e.computedSettings) {
+                e.computedSettings.lastAccess = new Date().valueOf()
+            }
             setTouched(compState, e.compId)
         })
 }
@@ -166,7 +188,11 @@ function generateKey(comp, props) {
     props.toJSON = function() {
         var result = {}
         for (var x in this) {
-            if (x !== "_parent" && x !== "_appId" && x !== "_isComputed") {
+            if (
+                x !== "_parent" &&
+                x !== "_appId" &&
+                x !== "_computedSettings"
+            ) {
                 result[x] = this[x]
             }
         }
@@ -202,7 +228,8 @@ export function StartRender(comp, initialprops, domelement) {
             // cleanup not touched comps
             let toDelete = []
             for (var value of _settings.CompState.values()) {
-                if (!value.touched && !value.isComputed) {
+                console.log(value)
+                if (!value.touched && !value.computedSettings.isComputed) {
                     if (value.mutationListener) {
                         value.mutationListener.dispose()
                     }
