@@ -99,6 +99,7 @@ export function Lif(comp, props) {
     let newProps = Object.assign({}, props)
     props = newProps
     //console.log(props)
+
     let _settings = SettingsAndState.get(props._appId)
     let compState = _settings.CompState
     let computedSettings = props._computedSettings
@@ -107,15 +108,34 @@ export function Lif(comp, props) {
     }
     props["_computedSettings"] = {}
     if (!compState.has(compId) || !compState.get(compId)) {
-        compState.set(compId, {
-            needsRender: true,
-            touched: true,
-            inUI: undefined,
-            mutationListener: undefined,
-            parent: undefined,
-            compId: undefined,
-            computedSettings: computedSettings
-        })
+        let setFromComputed = false
+        if (computedSettings.isComputed) {
+            // check if its a computed which was already executed before (not in the UI, eg. via Action)
+            let computedCompId = "computed_" + compId
+            let computedMain = SettingsAndState.get(computedCompId)
+
+            if (computedMain) {
+                let computedState = computedMain.CompState.get(compId)
+                if (computedState) {
+                    // the computed was already executed and available
+                    // so yeh, reuse it
+                    computedState.inUI = computedState.compId
+                    compState.set(compId, computedState)
+                    setFromComputed = true
+                }
+            }
+        }
+        if (!setFromComputed) {
+            compState.set(compId, {
+                needsRender: true,
+                touched: true,
+                inUI: undefined,
+                mutationListener: undefined,
+                parent: undefined,
+                compId: undefined,
+                computedSettings: computedSettings
+            })
+        }
     }
     let state = compState.get(compId)
     state.parent = props._parent
