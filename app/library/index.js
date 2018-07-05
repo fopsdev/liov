@@ -12,12 +12,17 @@ let SettingsAndState = new Map()
 
 //export let Settings = { Rerender: true }
 // @todo make parent a object and call it _settings. it will be used to handover the compstate & settings & current parentinfo
-export function Lif(comp, props, _settings = undefined) {
-    console.log(_settings)
-    if (!_settings) {
-        throw "liov: components always need to pass _settings object..."
+export function Lif(comp, props) {
+    if (!props._parent || !props._appId) {
+        throw "liov: components always need to pass _parent and _appId object..."
     }
+
     let compId = generateKey(comp, props)
+    //console.log(compId)
+    let newProps = Object.assign({}, props)
+    props = newProps
+    //console.log(props)
+    let _settings = SettingsAndState.get(props._appId)
     let compState = _settings.CompState
     if (!compState.has(compId)) {
         compState.set(compId, {
@@ -29,15 +34,14 @@ export function Lif(comp, props, _settings = undefined) {
         })
     }
     let state = compState.get(compId)
-    state.parent = JSON.stringify(_settings.Parent)
-
+    state.parent = props._parent
     state.touched = true
     state.compId = compId
     if (state.needsRender) {
         let trackId = Tracker.startPathsTracking()
         console.log("run comp: " + compId)
-        _settings.Parent = compId
-        let res = comp(props, _settings)
+        props._parent = compId
+        let res = comp(props)
         const paths = Tracker.clearPathsTracking(trackId)
         if (paths.size > 0) {
             if (state.mutationListener === undefined) {
@@ -70,27 +74,35 @@ function setTouched(compState, compId) {
     Array.from(compState.values())
         .filter(e => e.parent === compId)
         .forEach(e => {
-            console.log("touch: " + e.compId)
+            //console.log("touch: " + e.compId)
             e.touched = true
-            throw "debug"
             setTouched(compState, e.compId)
         })
 }
 
 function generateKey(comp, props) {
-    return JSON.stringify({
-        1: comp.name,
-        2: props
-    })
+    props.toJSON = function() {
+        var result = {}
+        for (var x in this) {
+            if (x !== "_parent" && x !== "_appId") {
+                result[x] = this[x]
+            }
+        }
+        return result
+    }
+    let sNewProps = JSON.stringify(props)
+
+    return comp.name + sNewProps
 }
 
 export function StartRender(comp, initialprops, domelement) {
     let compId = generateKey(comp, initialprops)
+    initialprops["_parent"] = "root"
+    initialprops["_appId"] = compId
     if (!SettingsAndState.has(compId)) {
         SettingsAndState.set(compId, {
             Settings: { Rerender: true },
-            CompState: new Map(),
-            Parent: "root"
+            CompState: new Map()
         })
     }
     let _settings = SettingsAndState.get(compId)
@@ -101,7 +113,7 @@ export function StartRender(comp, initialprops, domelement) {
             _settings.CompState.forEach(c => (c.touched = false))
             console.log("Start Render : " + compId)
 
-            let res = Lif(comp, initialprops, _settings)
+            let res = Lif(comp, initialprops)
             if (res !== noChange) {
                 render(res, domelement)
             }
@@ -112,6 +124,7 @@ export function StartRender(comp, initialprops, domelement) {
                     if (value.mutationListener) {
                         value.mutationListener.dispose()
                     }
+                    //console.log("disposing :" + value.compId)
                     toDelete.push(value.compId)
                 }
             }

@@ -3,7 +3,7 @@ import { repeat } from "lit-html/lib/repeat.js"
 import { Data, Lif, Tracker } from "../library/index.js"
 import { B } from "./B.js"
 
-export const A = (props, _settings) => html`
+export const A = props => html`
 
 <h2>${Data.A} </h2>
   <ul>
@@ -11,7 +11,8 @@ export const A = (props, _settings) => html`
           Data.B,
           i => i.id,
           i => {
-              return Lif(B, { id: i.id }, _settings)
+              props["id"] = i.id
+              return Lif(B, props)
           }
       )}
     </ul>
