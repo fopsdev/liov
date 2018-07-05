@@ -17,7 +17,7 @@ export const A = props => html`
       )}
     </ul>
 
-<button on-click=${() => {
+<button class="c-button c-button--warning" on-click=${() => {
     Tracker.startMutationTracking()
     if (Data.C === "X") {
         Data.B.pop()
@@ -27,8 +27,8 @@ export const A = props => html`
     }
     Tracker.clearMutationTracking()
     Tracker.flush()
-}}>click me</button>
-<button on-click=${() => {
+}}>Do stuff</button>
+<button class="c-button c-button--success" on-click=${() => {
     Tracker.startMutationTracking()
     Data.C = "C"
     Tracker.clearMutationTracking()
