@@ -2,13 +2,13 @@ import { html } from "lit-html/lib/lit-extended.js"
 import { Lif } from "../library/index.js"
 import { C } from "./C.js"
 
-const GetExtendedList = (props, parent) => {
+const GetExtendedList = (props, _settings) => {
     if (props.id === "B2") {
-        return html`${Lif(C, {}, parent)}`
+        return html`${Lif(C, {}, _settings)}`
     } else {
         return props.id
     }
 }
-export const B = (props, parent) => html`
-<li>-- ${GetExtendedList(props, parent)}</li>
+export const B = (props, _settings) => html`
+<li>-- ${GetExtendedList(props, _settings)}</li>
 `
