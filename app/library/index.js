@@ -6,12 +6,9 @@ import { render } from "lit-html"
 export const Tracker = new ProxyStateTree(Store)
 export let Data = Tracker.get()
 
-//let CompState = new Map()
 
 export let SettingsAndState = new Map()
 
-//export let Settings = { Rerender: true }
-// @todo make parent a object and call it _settings. it will be used to handover the compstate & settings & current parentinfo
 export function Compute(
     comp,
     props,
