@@ -13,6 +13,7 @@ import { Computed1 } from "../computeds/Computed1.js"
 export const A = props => html`
 
 <h2>${Data.A} </h2>
+<h2>${Compute(Computed1, props)}</h2>
   <ul>
       ${repeat(
           Data.B,

@@ -33,7 +33,7 @@ export function Compute(
             props = newProps
         }
     }
-    // if we are coming from render context (UI) then just keep using that infrastructure
+    // always prepare the computed in its own state
     let compId = generateKey(comp, props)
     let computedCompId = "computed_" + compId
     if (!SettingsAndState.has(computedCompId)) {
@@ -41,52 +41,35 @@ export function Compute(
             CompState: new Map()
         })
     }
-    //console.log(computedCompId)
+
     let computedState = SettingsAndState.get(computedCompId).CompState
+    // if there is no parent then its a "pure" computed which is not used in the ui
+    // so lets init it
+
+    let isPure = false
+    if (!props._parent) {
+        props["_parent"] = "computedroot"
+        props["_appId"] = computedCompId
+        isPure = true
+        computedState.forEach(c => (c.touched = false))
+    }
+    //console.log(computedCompId)
 
     props["_computedSettings"] = {
         isComputed: true,
         lastAccess: new Date().valueOf(),
-        validFor: validFor
+        validFor: validFor,
+        isPure: isPure
     }
 
-    if (props._parent) {
-        let res = Lif(comp, props)
-        // getting the computed state from the rendertree comp state, no need to recreate it, just use the same
-
-        let renderCompState = SettingsAndState.get(props._appId).CompState
-        //console.log(renderCompState)
-        let renderComputedState = renderCompState.get(compId)
-        // if (!computedState.has(compId)) {
-        //     computedState.set(compId, {})
-        // }
-        renderComputedState.inUI = renderComputedState.compId
-        computedState.set(compId, renderComputedState)
-
-        //console.log("Finished Compute " + computedCompId + ", Comp State :")
-        //console.log(computedState)
-        return res
-    }
-
-    props["_parent"] = "computedroot"
-    props["_appId"] = computedCompId
-    computedState.forEach(c => (c.touched = false))
-    //console.log("Start Compute in Compute Mode : " + computedCompId)
+    //   if (props._parent) {
     let res = Lif(comp, props)
-    let toDelete = []
-    for (var value of computedState.values()) {
-        if (!value.touched && value.inUI === undefined) {
-            if (value.mutationListener) {
-                value.mutationListener.dispose()
-            }
-            toDelete.push(value.compId)
-        }
+    // getting the computed state from the rendertree comp state, no need to recreate it, just use the same
+    if (!isPure) {
+        let renderCompState = SettingsAndState.get(props._appId).CompState
+        let renderComputedState = renderCompState.get(compId)
+        computedState.set(compId, renderComputedState)
     }
-    toDelete.forEach(e => computedState.delete(e))
-    // console.log("Finished Compute " + computedCompId + ", Comp State :")
-    // console.log(computedState)
-    // console.log("store: ")
-    // console.log(Store)
     return res
 }
 export function Lif(comp, props) {
@@ -95,10 +78,9 @@ export function Lif(comp, props) {
     }
 
     let compId = generateKey(comp, props)
-    //console.log(compId)
+
     let newProps = Object.assign({}, props)
     props = newProps
-    //console.log(props)
 
     let _settings = SettingsAndState.get(props._appId)
     let compState = _settings.CompState
@@ -107,19 +89,20 @@ export function Lif(comp, props) {
         computedSettings = {}
     }
     props["_computedSettings"] = {}
+
     if (!compState.has(compId) || !compState.get(compId)) {
         let setFromComputed = false
         if (computedSettings.isComputed) {
             // check if its a computed which was already executed before (not in the UI, eg. via Action)
             let computedCompId = "computed_" + compId
-            let computedMain = SettingsAndState.get(computedCompId)
 
+            let computedMain = SettingsAndState.get(computedCompId)
             if (computedMain) {
                 let computedState = computedMain.CompState.get(compId)
                 if (computedState) {
                     // the computed was already executed and available
                     // so yeh, reuse it
-                    computedState.inUI = computedState.compId
+                    computedState.computedSettings.isPure = false
                     compState.set(compId, computedState)
                     setFromComputed = true
                 }
@@ -129,7 +112,6 @@ export function Lif(comp, props) {
             compState.set(compId, {
                 needsRender: true,
                 touched: true,
-                inUI: undefined,
                 mutationListener: undefined,
                 parent: undefined,
                 compId: undefined,
@@ -159,6 +141,15 @@ export function Lif(comp, props) {
                         }
                         while (checkState && !checkState.needsRender) {
                             checkState.needsRender = true
+                            if (
+                                checkState.computedSettings.isComputed &&
+                                checkState.computedSettings.isPure
+                            ) {
+                                // pure computeds just need to set rerender and then can be disconnected from the listener
+                                // so they are not in ui and therefore can be recalculated when the user wants it next time
+                                state.mutationListener.dispose()
+                                state.mutationListener = undefined
+                            }
                             checkState = compState.get(checkState.parent)
                         }
                     }
@@ -192,7 +183,6 @@ function setTouched(compState, compId) {
         .forEach(e => {
             //console.log("touch: " + JSON.stringify(e))
             e.touched = true
-
             if (e.computedSettings) {
                 e.computedSettings.lastAccess = new Date().valueOf()
             }
@@ -231,11 +221,9 @@ export function StartRender(comp, initialprops, domelement) {
     }
     let _settings = SettingsAndState.get(compId)
     function mainLoop() {
-        //@ todo makes settings, compstate per app root
         if (_settings.Settings.Rerender) {
             _settings.Settings.Rerender = false
             _settings.CompState.forEach(c => (c.touched = false))
-            //console.log("Start Render : " + compId)
 
             let res = Lif(comp, initialprops)
             if (res !== noChange) {
@@ -244,20 +232,18 @@ export function StartRender(comp, initialprops, domelement) {
             // cleanup not touched comps
             let toDelete = []
             for (var value of _settings.CompState.values()) {
-                //console.log(value)
-                if (!value.touched && !value.computedSettings.isComputed) {
+                if (!value.touched) {
                     if (value.mutationListener) {
                         value.mutationListener.dispose()
+                        value.mutationListener = undefined
                     }
-                    //console.log("disposing :" + value.compId)
-                    toDelete.push(value.compId)
+                    if (!value.computedSettings.isComputed) {
+                        toDelete.push(value.compId)
+                    }
                 }
             }
             toDelete.forEach(e => _settings.CompState.delete(e))
             console.log("Finished Render " + compId + ", All Comp State :")
-            // console.log(_settings.CompState)
-            // console.log("store: ")
-            // console.log(Store)
             console.log(SettingsAndState)
         }
         requestAnimationFrame(mainLoop)
