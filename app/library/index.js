@@ -55,6 +55,10 @@ export function Compute(
     }
     //console.log(computedCompId)
 
+    // lastAccess and valdFor
+    // they are here because computeds do't get removed from memory (the handlers get disposed, thats fine)
+    // so this lastAccess and validFor will give us a change to remove them after validFor-millisecs of inactivity
+    // the code which in fact is removing them is not yt implemnted
     props["_computedSettings"] = {
         isComputed: true,
         lastAccess: new Date().valueOf(),
@@ -205,7 +209,6 @@ function generateKey(comp, props) {
         return result
     }
     let sNewProps = JSON.stringify(props)
-
     return comp.name + sNewProps
 }
 
