@@ -6,7 +6,6 @@ import { render } from "lit-html"
 export const Tracker = new ProxyStateTree(Store)
 export let Data = Tracker.get()
 
-
 export let SettingsAndState = new Map()
 
 export function Compute(
@@ -49,9 +48,9 @@ export function Compute(
         props["_appId"] = computedCompId
         isPure = true
         computedState.forEach(c => (c.touched = false))
+    } else {
+        isPure = props._computedSettings && props._computedSettings.isPure
     }
-    //console.log(computedCompId)
-
     // lastAccess and valdFor
     // they are here because computeds do't get removed from memory (the handlers get disposed, thats fine)
     // so this lastAccess and validFor will give us a change to remove them after validFor-millisecs of inactivity
@@ -62,15 +61,10 @@ export function Compute(
         validFor: validFor,
         isPure: isPure
     }
-
-    //   if (props._parent) {
     let res = Lif(comp, props)
-    // getting the computed state from the rendertree comp state, no need to recreate it, just use the same
-    if (!isPure) {
-        let renderCompState = SettingsAndState.get(props._appId).CompState
-        let renderComputedState = renderCompState.get(compId)
-        computedState.set(compId, renderComputedState)
-    }
+    let renderCompState = SettingsAndState.get(props._appId).CompState
+    let renderComputedState = renderCompState.get(compId)
+    computedState.set(compId, renderComputedState)
     return res
 }
 export function Lif(comp, props) {
@@ -89,7 +83,6 @@ export function Lif(comp, props) {
     if (!computedSettings) {
         computedSettings = {}
     }
-    props["_computedSettings"] = {}
 
     if (!compState.has(compId) || !compState.get(compId)) {
         let setFromComputed = false
