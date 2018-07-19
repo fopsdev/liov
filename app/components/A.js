@@ -1,22 +1,17 @@
 import { html } from "lit-html/lib/lit-extended.js"
 import { repeat } from "lit-html/lib/repeat.js"
-import {
-    Data,
-    Lif,
-    Compute,
-    Tracker,
-    SettingsAndState
-} from "../library/index.js"
+import { Lif, Compute, Tracker, SettingsAndState } from "../library/index.js"
+import { Store } from "../store"
 import { B } from "./B.js"
 import { Computed1 } from "../computeds/Computed1.js"
 
 export const A = props => html`
 
-<h2>${Data.A} </h2>
+<h2>${Store.A} </h2>
 <h2>${Compute(Computed1, props)}</h2>
   <ul>
       ${repeat(
-          Data.B,
+          Store.B,
           i => i.id,
           i => {
               props["id"] = i.id
@@ -26,19 +21,20 @@ export const A = props => html`
     </ul>
 
 <button class="c-button c-button--warning" on-click=${() => {
-    Tracker.startMutationTracking()
-    if (Data.C === "X") {
-        Data.B.pop()
+    console.log(Tracker)
+    Tracker.proxyStateTree.startMutationTracking()
+    if (Store.C === "X") {
+        Store.B.pop()
     } else {
-        Data.C = "X"
-        Data.B.push({ id: new Date().valueOf() })
+        Store.C = "X"
+        Store.B.push({ id: new Date().valueOf() })
     }
-    Tracker.clearMutationTracking()
-    Tracker.flush()
+    Tracker.proxyStateTree.clearMutationTracking()
+    Tracker.proxyStateTree.flush()
 }}>Do stuff</button>
 <button class="c-button c-button--success" on-click=${() => {
     Tracker.startMutationTracking()
-    Data.C = "C"
+    Store.C = "C"
     Tracker.clearMutationTracking()
     Tracker.flush()
 }}>Set to C</button>

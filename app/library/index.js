@@ -1,10 +1,14 @@
 import { Store } from "../store.js"
-import ProxyStateTree from "proxy-state-tree"
+import App from "overmind"
 import { noChange } from "lit-html"
 import { render } from "lit-html"
 
-export const Tracker = new ProxyStateTree(Store)
-export let Data = Tracker.get()
+export const Tracker = new App({
+    Store,
+    undefined
+})
+
+//export let Data = Store
 
 export let SettingsAndState = new Map()
 
@@ -118,11 +122,11 @@ export function Lif(comp, props) {
     state.touched = true
     state.compId = compId
     if (state.needsRender) {
-        let trackId = Tracker.startPathsTracking()
+        let trackId = Tracker.trackState()
         console.log("run comp: " + compId)
         props._parent = compId
         let res = comp(props)
-        const paths = Tracker.clearPathsTracking(trackId)
+        const paths = Tracker.clearTrackState(trackId)
         if (paths.size > 0) {
             if (state.mutationListener === undefined) {
                 state.mutationListener = Tracker.addMutationListener(

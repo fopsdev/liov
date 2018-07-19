@@ -1,3 +1,4 @@
-import { Data, Lif } from "../library/index.js"
+import { Lif } from "../library/index.js"
+import { Store } from "../store"
 
-export const Computed1 = props => Data.B.length
+export const Computed1 = props => Store.B.length

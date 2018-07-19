@@ -16,6 +16,7 @@
   "dependencies": {
     "chart.js": "^2.7.1",
     "lit-html": "^0.10.2",
+    "overmind": "^1.0.0-1531951520682",
     "proxy-state-tree": "^1.0.0-beta4",
     "uuid-random": "^1.0.6"
   },
