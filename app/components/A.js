@@ -1,10 +1,17 @@
 import { html } from "lit-html/lib/lit-extended.js"
 import { repeat } from "lit-html/lib/repeat.js"
-import { Lif, Compute, Tracker, SettingsAndState } from "../library/index.js"
-import { Store } from "../store"
+import {
+    Lif,
+    Compute,
+    Tracker,
+    SettingsAndState,
+    connect
+} from "../library/index.js"
+
 import { B } from "./B.js"
 import { Computed1 } from "../computeds/Computed1.js"
-
+console.log(connect)
+let Store = connect().state
 export const A = props => html`
 
 <h2>${Store.A} </h2>

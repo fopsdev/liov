@@ -5,8 +5,10 @@ import { render } from "lit-html"
 
 export const Tracker = new App({
     Store,
-    undefined
+    actions: {}
 })
+console.log(Tracker)
+export const connect = Tracker.connect.bind(Tracker)
 
 //export let Data = Store
 
