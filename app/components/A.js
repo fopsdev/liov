@@ -5,20 +5,18 @@ import {
     Compute,
     Tracker,
     SettingsAndState,
-    connect
+    Data
 } from "../library/index.js"
 
 import { B } from "./B.js"
 import { Computed1 } from "../computeds/Computed1.js"
-console.log(connect)
-let Store = connect().state
 export const A = props => html`
 
-<h2>${Store.A} </h2>
+<h2>${Data.A} </h2>
 <h2>${Compute(Computed1, props)}</h2>
   <ul>
       ${repeat(
-          Store.B,
+          Data.B,
           i => i.id,
           i => {
               props["id"] = i.id
@@ -29,21 +27,10 @@ export const A = props => html`
 
 <button class="c-button c-button--warning" on-click=${() => {
     console.log(Tracker)
-    Tracker.proxyStateTree.startMutationTracking()
-    if (Store.C === "X") {
-        Store.B.pop()
-    } else {
-        Store.C = "X"
-        Store.B.push({ id: new Date().valueOf() })
-    }
-    Tracker.proxyStateTree.clearMutationTracking()
-    Tracker.proxyStateTree.flush()
+    Tracker.actions.doStuff()
 }}>Do stuff</button>
 <button class="c-button c-button--success" on-click=${() => {
-    Tracker.startMutationTracking()
-    Store.C = "C"
-    Tracker.clearMutationTracking()
-    Tracker.flush()
+    Tracker.actions.setToC()
 }}>Set to C</button>
 <button class="c-button" on-click=${() => {
     console.log(Compute(Computed1))

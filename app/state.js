@@ -1,4 +1,4 @@
-export const Store = {
+export const state = {
     A: "A",
     B: [{ id: "B1" }, { id: "B2" }, { id: "B3" }],
     C: "C",

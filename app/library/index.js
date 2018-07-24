@@ -1,16 +1,19 @@
-import { Store } from "../store.js"
+import { state } from "../state.js"
 import App from "overmind"
 import { noChange } from "lit-html"
 import { render } from "lit-html"
+import { getActions } from "../actions/actions.js"
 
 export const Tracker = new App({
-    Store,
-    actions: {}
+    state,
+    actions: action => getActions(action),
+    devtools: null
 })
-console.log(Tracker)
-export const connect = Tracker.connect.bind(Tracker)
 
-//export let Data = Store
+let _rerenderSettings = []
+//console.log(Tracker)
+
+export const Data = Tracker.proxyStateTree.get()
 
 export let SettingsAndState = new Map()
 
@@ -137,7 +140,10 @@ export function Lif(comp, props) {
                         // flag all relevant comps to be rerendered
                         let checkState = state
                         if (!state.computedSettings.isComputed) {
-                            _settings.Settings.Rerender = true
+                            _rerenderSettings.push(_settings)
+                            if (_rerenderSettings.length === 1) {
+                                requestAnimationFrame(mainLoop)
+                            }
                         }
                         while (checkState && !checkState.needsRender) {
                             checkState.needsRender = true
@@ -214,38 +220,47 @@ export function StartRender(comp, initialprops, domelement) {
     initialprops["_appId"] = compId
     if (!SettingsAndState.has(compId)) {
         SettingsAndState.set(compId, {
-            Settings: { Rerender: true },
-            CompState: new Map()
+            CompState: new Map(),
+            StartComp: comp,
+            InitialProps: initialprops,
+            DomElement: domelement,
+            CompId: compId
         })
     }
-    let _settings = SettingsAndState.get(compId)
-    function mainLoop() {
-        if (_settings.Settings.Rerender) {
-            _settings.Settings.Rerender = false
-            _settings.CompState.forEach(c => (c.touched = false))
+    _rerenderSettings.push(SettingsAndState.get(compId))
+    //console.log(_settings)
+    mainLoop()
+}
 
-            let res = Lif(comp, initialprops)
-            if (res !== noChange) {
-                render(res, domelement)
-            }
-            // cleanup not touched comps
-            let toDelete = []
-            for (var value of _settings.CompState.values()) {
-                if (!value.touched) {
-                    if (value.mutationListener) {
-                        value.mutationListener.dispose()
-                        value.mutationListener = undefined
-                    }
-                    if (!value.computedSettings.isComputed) {
-                        toDelete.push(value.compId)
-                    }
+function mainLoop() {
+    while (_rerenderSettings.length > 0) {
+        let _settings = _rerenderSettings.pop()
+
+        _settings.CompState.forEach(c => (c.touched = false))
+
+        let res = Lif(_settings.StartComp, _settings.InitialProps)
+        if (res !== noChange) {
+            render(res, _settings.DomElement)
+        }
+        // cleanup not touched comps
+        let toDelete = []
+        for (var value of _settings.CompState.values()) {
+            if (!value.touched) {
+                if (value.mutationListener) {
+                    value.mutationListener.dispose()
+                    value.mutationListener = undefined
+                }
+                if (!value.computedSettings.isComputed) {
+                    toDelete.push(value.compId)
                 }
             }
-            toDelete.forEach(e => _settings.CompState.delete(e))
-            console.log("Finished Render " + compId + ", All Comp State :")
-            console.log(SettingsAndState)
         }
-        requestAnimationFrame(mainLoop)
+        toDelete.forEach(e => _settings.CompState.delete(e))
+        console.log(
+            "Finished Render " + _settings.CompId + ", All Comp State :"
+        )
+        console.log(SettingsAndState)
     }
-    requestAnimationFrame(mainLoop)
+
+    //requestAnimationFrame(mainLoop)
 }

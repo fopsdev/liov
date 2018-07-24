@@ -1,3 +1,3 @@
-import { Store } from "../store"
+import { Data } from "../library/index.js"
 
-export const Computed11 = () => Store.D.length
+export const Computed11 = () => Data.D.length
