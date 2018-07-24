@@ -26,9 +26,12 @@ export const A = props => html`
     </ul>
 
 <button class="c-button c-button--warning" on-click=${() => {
-    console.log(Tracker)
     Tracker.actions.doStuff()
-}}>Do stuff</button>
+}}>Add stuff</button>
+<button class="c-button c-button--warning" on-click=${() => {
+    Tracker.actions.removeStuff()
+}}>Remove stuff</button>
+
 <button class="c-button c-button--success" on-click=${() => {
     Tracker.actions.setToC()
 }}>Set to C</button>
