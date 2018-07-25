@@ -120,6 +120,7 @@ export function Lif(comp, props) {
                 mutationListener: undefined,
                 parent: undefined,
                 compId: undefined,
+                comp: undefined,
                 computedSettings: computedSettings
             })
         }
@@ -128,6 +129,7 @@ export function Lif(comp, props) {
     state.parent = props._parent
     state.touched = true
     state.compId = compId
+    state.comp = comp
     if (state.needsRender) {
         // @todo, idea
         // the first comp it hits which needs to be rerendered also set a DOM value (id?)
@@ -165,7 +167,10 @@ export function Lif(comp, props) {
             }
             _settings.StartFromDomId = renderId
             _settings.InitialProps = props
-            _settings.StartComp = comp
+            _settings.StartComp = state.comp
+            console.log("compId:" + compId)
+            console.log("Settings Comp: ")
+            console.log(comp)
         }
 
         const paths = Tracker.clearTrackState(trackId)
@@ -176,14 +181,15 @@ export function Lif(comp, props) {
                     () => {
                         // flag all relevant comps to be rerendered
                         let checkState = state
+                        checkState.needsRender = true
                         if (!state.computedSettings.isComputed) {
                             _rerenderSettings.push(_settings)
                             if (_rerenderSettings.length === 1) {
                                 requestAnimationFrame(mainLoop)
                             }
                         }
-                        while (checkState && !checkState.needsRender) {
-                            checkState.needsRender = true
+                        while (checkState && !checkState.touched) {
+                            checkState.touched = true
                             if (
                                 checkState.computedSettings.isComputed &&
                                 checkState.computedSettings.isPure
@@ -275,16 +281,22 @@ function mainLoop() {
 
         _settings.CompState.forEach(c => (c.touched = false))
 
-        console.log(" Render Start Settings:")
+        console.log(" Render Start Settings Before:")
         let settingsClone = {}
         Object.assign(settingsClone, _settings)
-
         console.log(settingsClone)
+
         let startFromDomId = _settings.StartFromDomId
         _settings.StartFromDomId = ""
         let res = Lif(_settings.StartComp, _settings.InitialProps)
+
+        console.log(" Render Start Settings After:")
+        settingsClone = {}
+        Object.assign(settingsClone, _settings)
+        console.log(settingsClone)
+
         if (res !== noChange) {
-            //console.log(startFromDomId)
+            console.log(startFromDomId)
 
             render(res, document.getElementById(startFromDomId))
         }
