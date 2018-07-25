@@ -127,6 +127,9 @@ export function Lif(comp, props) {
     state.touched = true
     state.compId = compId
     if (state.needsRender) {
+        // @todo, idea
+        // the first comp it hits which needs to be rerendered also set a DOM value (id?)
+        // so the next startrender will start from here and not always from the very root
         let trackId = Tracker.trackState()
         console.log("run comp: " + compId)
         props._parent = compId
