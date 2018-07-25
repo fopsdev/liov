@@ -84,6 +84,7 @@ export function Lif(comp, props) {
     }
 
     let compId = generateKey(comp, props)
+    _renderCounter++
 
     let newProps = Object.assign({}, props)
     props = newProps
@@ -121,64 +122,69 @@ export function Lif(comp, props) {
                 parent: undefined,
                 compId: undefined,
                 comp: undefined,
+                renderId: 0,
                 computedSettings: computedSettings
             })
         }
     }
+    let renderId = "__overlit" + _renderCounter
     let state = compState.get(compId)
     state.parent = props._parent
     state.touched = true
     state.compId = compId
     state.comp = comp
+    state.renderId = renderId
     if (state.needsRender) {
         // @todo, idea
         // the first comp it hits which needs to be rerendered also set a DOM value (id?)
         // so the next startrender will start from here and not always from the very root
 
-        _renderCounter++
         //console.log(_renderCounter)
         let trackId = Tracker.trackState()
         console.log("run comp: " + compId)
         props._parent = compId
         let res = comp(props)
-        if (!state.computedSettings.isComputed && !_settings.StartFromDomId) {
-            // todo: check if already a __overlit id generated an already in dom...if yes use that
-            //console.log(res)
-            // create a new instance templateResult with a prepending div id for our purpose
-            let renderId = ""
-            let s = res.strings[0]
-            let startId = s.indexOf("__overlit")
-            console.log(res)
-            console.log("renderid: " + s + " start:" + startId)
-            if (startId === -1) {
-                renderId = "__overlit" + _renderCounter
-                let stringsArray = res.strings.slice(0)
-
-                stringsArray[0] =
-                    "<div id='" + renderId + "'/> " + stringsArray[0]
-                res = new TemplateResult(
-                    stringsArray,
-                    res.values,
-                    res.type,
-                    res.partCallback
-                )
-            } else {
-                renderId = ""
-            }
-            _settings.StartFromDomId = renderId
-            _settings.InitialProps = props
-            _settings.StartComp = state.comp
-            console.log("compId:" + compId)
-            console.log("Settings Comp: ")
-            console.log(comp)
-        }
 
         const paths = Tracker.clearTrackState(trackId)
+
+        if (!state.computedSettings.isComputed) {
+            let stringsArray = res.strings.slice(0)
+
+            stringsArray[0] = "<div id='" + renderId + "'/> " + stringsArray[0]
+            res = new TemplateResult(
+                stringsArray,
+                res.values,
+                res.type,
+                res.partCallback
+            )
+        }
         if (paths.size > 0) {
             if (state.mutationListener === undefined) {
                 state.mutationListener = Tracker.addMutationListener(
                     paths,
                     () => {
+                        if (!state.computedSettings.isComputed) {
+                            // todo: check if already a __overlit id generated an already in dom...if yes use that
+                            //console.log(res)
+                            // create a new instance templateResult with a prepending div id for our purpose
+
+                            let s = res.strings[0]
+                            let startId = s.indexOf("__overlit")
+                            // console.log(res)
+                            // console.log("renderid: " + s + " start:" + startId)
+                            // if (startId === -1) {
+
+                            // } else {
+                            //     renderId = ""
+                            // }
+                            _settings.StartFromDomId = state.renderId
+                            _settings.InitialProps = props
+                            _settings.StartComp = state.comp
+
+                            console.log("Settings: ")
+                            console.log(_settings)
+                        }
+
                         // flag all relevant comps to be rerendered
                         let checkState = state
                         checkState.needsRender = true
@@ -286,8 +292,6 @@ function mainLoop() {
         Object.assign(settingsClone, _settings)
         console.log(settingsClone)
 
-        let startFromDomId = _settings.StartFromDomId
-        _settings.StartFromDomId = ""
         let res = Lif(_settings.StartComp, _settings.InitialProps)
 
         console.log(" Render Start Settings After:")
@@ -296,9 +300,9 @@ function mainLoop() {
         console.log(settingsClone)
 
         if (res !== noChange) {
-            console.log(startFromDomId)
+            console.log(_settings.StartFromDomId)
 
-            render(res, document.getElementById(startFromDomId))
+            render(res, document.getElementById(_settings.StartFromDomId))
         }
         // cleanup not touched comps
         let toDelete = []
