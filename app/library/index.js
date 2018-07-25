@@ -1,7 +1,8 @@
 import { state } from "../state.js"
 import App from "overmind"
 import { noChange } from "lit-html"
-import { render } from "lit-html"
+import { render, TemplateResult } from "lit-html"
+
 import { getActions } from "../actions/actions.js"
 
 export const Tracker = new App({
@@ -11,6 +12,7 @@ export const Tracker = new App({
 })
 
 let _rerenderSettings = []
+let _renderCounter = 0
 //console.log(Tracker)
 
 export const Data = Tracker.proxyStateTree.get()
@@ -130,10 +132,42 @@ export function Lif(comp, props) {
         // @todo, idea
         // the first comp it hits which needs to be rerendered also set a DOM value (id?)
         // so the next startrender will start from here and not always from the very root
+
+        _renderCounter++
+        //console.log(_renderCounter)
         let trackId = Tracker.trackState()
         console.log("run comp: " + compId)
         props._parent = compId
         let res = comp(props)
+        if (!state.computedSettings.isComputed && !_settings.StartFromDomId) {
+            // todo: check if already a __overlit id generated an already in dom...if yes use that
+            //console.log(res)
+            // create a new instance templateResult with a prepending div id for our purpose
+            let renderId = ""
+            let s = res.strings[0]
+            let startId = s.indexOf("__overlit")
+            console.log(res)
+            console.log("renderid: " + s + " start:" + startId)
+            if (startId === -1) {
+                renderId = "__overlit" + _renderCounter
+                let stringsArray = res.strings.slice(0)
+
+                stringsArray[0] =
+                    "<div id='" + renderId + "'/> " + stringsArray[0]
+                res = new TemplateResult(
+                    stringsArray,
+                    res.values,
+                    res.type,
+                    res.partCallback
+                )
+            } else {
+                renderId = ""
+            }
+            _settings.StartFromDomId = renderId
+            _settings.InitialProps = props
+            _settings.StartComp = comp
+        }
+
         const paths = Tracker.clearTrackState(trackId)
         if (paths.size > 0) {
             if (state.mutationListener === undefined) {
@@ -217,17 +251,17 @@ function generateKey(comp, props) {
     return comp.name + sNewProps
 }
 
-export function StartRender(comp, initialprops, domelement) {
+export function StartRender(comp, initialprops, domId) {
     let compId = generateKey(comp, initialprops)
     initialprops["_parent"] = "root"
     initialprops["_appId"] = compId
     if (!SettingsAndState.has(compId)) {
         SettingsAndState.set(compId, {
             CompState: new Map(),
-            StartComp: comp,
             InitialProps: initialprops,
-            DomElement: domelement,
-            CompId: compId
+            CompId: compId,
+            StartComp: comp,
+            StartFromDomId: domId
         })
     }
     _rerenderSettings.push(SettingsAndState.get(compId))
@@ -240,10 +274,19 @@ function mainLoop() {
         let _settings = _rerenderSettings.pop()
 
         _settings.CompState.forEach(c => (c.touched = false))
-
+        let startFromDomId = _settings.StartFromDomId
+        _settings.StartFromDomId = ""
+        console.log(startFromDomId)
+        console.log(" Render Start Comp:")
+        console.log(_settings.StartComp)
+        console.log(" Render InitialProps:")
+        console.log(_settings.InitialProps)
         let res = Lif(_settings.StartComp, _settings.InitialProps)
+        console.log(startFromDomId)
         if (res !== noChange) {
-            render(res, _settings.DomElement)
+            //console.log(startFromDomId)
+
+            render(res, document.getElementById(startFromDomId))
         }
         // cleanup not touched comps
         let toDelete = []
@@ -259,6 +302,7 @@ function mainLoop() {
             }
         }
         toDelete.forEach(e => _settings.CompState.delete(e))
+
         console.log(
             "Finished Render " + _settings.CompId + ", All Comp State :"
         )

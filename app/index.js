@@ -12,5 +12,5 @@ setTimeout(function() {
 //
 console.log("Use Computed1: " + Compute(Computed1))
 console.log("Use Computed10: " + Compute(Computed10))
-StartRender(A, { id: "app1" }, document.getElementById("app1"))
-StartRender(A, { id: "app2" }, document.getElementById("app2"))
+StartRender(A, { id: "app1" }, "app1")
+//StartRender(A, { id: "app2" }, "app2")
