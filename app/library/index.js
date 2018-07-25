@@ -274,15 +274,15 @@ function mainLoop() {
         let _settings = _rerenderSettings.pop()
 
         _settings.CompState.forEach(c => (c.touched = false))
+
+        console.log(" Render Start Settings:")
+        let settingsClone = {}
+        Object.assign(settingsClone, _settings)
+
+        console.log(settingsClone)
         let startFromDomId = _settings.StartFromDomId
         _settings.StartFromDomId = ""
-        console.log(startFromDomId)
-        console.log(" Render Start Comp:")
-        console.log(_settings.StartComp)
-        console.log(" Render InitialProps:")
-        console.log(_settings.InitialProps)
         let res = Lif(_settings.StartComp, _settings.InitialProps)
-        console.log(startFromDomId)
         if (res !== noChange) {
             //console.log(startFromDomId)
 
